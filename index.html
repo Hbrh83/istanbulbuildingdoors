@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Kapı Haritası - Cluster'lı</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Marker Cluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+  <style>
+    #map { height: 600px; width: 100%; }
+    .popup-img {
+      width: 180px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<script>
+  // HARİTA
+  const map = L.map('map').setView([41.0351, 28.9784], 12);
+
+  // 📌 ÜCRETSİZ – HATASIZ – API KEY İSTEMEYEN HARİTA
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 20
+  }).addTo(map);
+
+  // KAPI İKONU
+  const doorIcon = L.divIcon({
+    html: `
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" 
+           stroke="#222" stroke-width="2.2" stroke-linecap="round" 
+           stroke-linejoin="round"
+           style="filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));">
+        <rect x="6" y="2" width="12" height="20" rx="2" ry="2"></rect>
+        <circle cx="14.5" cy="12" r="1"></circle>
+      </svg>
+    `,
+    className: "",
+    iconSize: [34, 34],
+    iconAnchor: [17, 34]
+  });
+
+  // ÖRNEK KAPILAR
+  const kapilar = [
+    { coords: [41.0361, 28.9772], title: "Büyük Zarifi Apartmanı", image: "zarifi.jpg", description: "Art Nouveau kapı" },
+    { coords: [41.0380, 28.9788], title: "Tomtom Kapı", image: "kapi2.jpg", description: "Tomtom'da tarihi kapı" }
+  ];
+
+  // CLUSTER
+  const markers = L.markerClusterGroup();
+
+  kapilar.forEach(k => {
+    const marker = L.marker(k.coords, { icon: doorIcon })
+.bindPopup(`
+  <div style="width:200px">
+    <img class="popup-img" src="${k.image}">
+    <h3 style="margin:0;font-size:16px;">${k.title}</h3>
+    <p style="font-size:13px;">${k.description}</p>
+
+    <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+
+      <!-- Street View -->
+      <a href="https://www.google.com/maps?q=&layer=c&cbll=${k.coords[0]},${k.coords[1]}" 
+         target="_blank"
+         style="padding:6px 8px; background:#eee; border-radius:6px; text-decoration:none; color:#333; font-size:13px;">
+        Street View
+      </a>
+
+    </div>
+  </div>
+`)
+
+    markers.addLayer(marker);
+  });
+
+  map.addLayer(markers);
+
+</script>
+
+</body>
+</html>
