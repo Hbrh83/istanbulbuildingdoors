@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Kapı Haritası - Cluster'lı</title>
+  <title>İstanbul Kapı Atlası - Cluster'lı</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -15,11 +15,62 @@
 
   <style>
     #map { height: 600px; width: 100%; }
+
     .popup-img {
       width: 180px;
       border-radius: 6px;
       margin-bottom: 10px;
     }
+
+
+    /* Cluster arka planını tamamen sıfırlıyoruz */
+    .marker-cluster,
+    .marker-cluster div {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* ORTADAKİ KIRMIZI DAİRE */
+    .marker-cluster div {
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      border-radius: 50%;
+      background: #9f1d2d !important; /* koyu kırmızı */
+      color: #fff !important;
+      font-size: 16px;
+      font-weight: 600;
+      position: relative;
+      text-align: center;
+    }
+
+    /* 1. SAYDAM HALKA */
+    .marker-cluster div::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(159, 29, 45, 0.25); /* yarı saydam */
+      z-index: -1;
+    }
+
+    /* 2. DIŞTAKİ DAHA SAYDAM HALKA */
+    .marker-cluster div::after {
+      content: "";
+      position: absolute;
+      top: -11px;
+      left: -11px;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(159, 29, 45, 0.12); /* çok saydam */
+      z-index: -2;
+    }
+
   </style>
 </head>
 
@@ -28,31 +79,24 @@
 <div id="map"></div>
 
 <script>
-  // HARİTA
-  const map = L.map('map').setView([41.0351, 28.9784], 12);
+  // 🌍 HARİTA
+  const map = L.map('map').setView([41.0351, 28.9784], 13);
 
-  // 📌 ÜCRETSİZ – HATASIZ – API KEY İSTEMEYEN HARİTA
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 20
+  // 🗺 GOOGLE MAPS ALTLIK
+  L.tileLayer('http://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0','mt1','mt2','mt3']
   }).addTo(map);
 
-  // KAPI İKONU
-  const doorIcon = L.divIcon({
-    html: `
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" 
-           stroke="#222" stroke-width="2.2" stroke-linecap="round" 
-           stroke-linejoin="round"
-           style="filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));">
-        <rect x="6" y="2" width="12" height="20" rx="2" ry="2"></rect>
-        <circle cx="14.5" cy="12" r="1"></circle>
-      </svg>
-    `,
-    className: "",
-    iconSize: [34, 34],
-    iconAnchor: [17, 34]
+  // 🟥 PNG KAPI İKONU
+  const doorIcon = L.icon({
+    iconUrl: 'door_icon.png',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
   });
 
-  // ÖRNEK KAPILAR
+  // 📌 KAPILAR (örnek – sen buraya dataset koyacaksın)
   const kapilar = [
     { coords: [41.0361, 28.9772], title: "Büyük Zarifi Apartmanı", image: "zarifi.jpg", description: "Art Nouveau kapı" },
     { coords: [41.0380, 28.9788], title: "Tomtom Kapı", image: "kapi2.jpg", description: "Tomtom'da tarihi kapı" }
@@ -63,24 +107,19 @@
 
   kapilar.forEach(k => {
     const marker = L.marker(k.coords, { icon: doorIcon })
-.bindPopup(`
-  <div style="width:200px">
-    <img class="popup-img" src="${k.image}">
-    <h3 style="margin:0;font-size:16px;">${k.title}</h3>
-    <p style="font-size:13px;">${k.description}</p>
+      .bindPopup(`
+        <div style="width:200px">
+          <img class="popup-img" src="${k.image}">
+          <h3 style="margin:0;font-size:16px;">${k.title}</h3>
+          <p style="font-size:13px;">${k.description}</p>
 
-    <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
-
-      <!-- Street View -->
-      <a href="https://www.google.com/maps?q=&layer=c&cbll=${k.coords[0]},${k.coords[1]}" 
-         target="_blank"
-         style="padding:6px 8px; background:#eee; border-radius:6px; text-decoration:none; color:#333; font-size:13px;">
-        Street View
-      </a>
-
-    </div>
-  </div>
-`)
+          <a href="https://www.google.com/maps?q=&layer=c&cbll=${k.coords[0]},${k.coords[1]}"
+             target="_blank"
+             style="padding:6px 8px; background:#eee; border-radius:6px; text-decoration:none; color:#333; font-size:13px;">
+            Street View
+          </a>
+        </div>
+      `);
 
     markers.addLayer(marker);
   });
