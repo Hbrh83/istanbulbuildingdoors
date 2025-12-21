@@ -1,131 +1,286 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <title>İstanbul Kapı Atlası - Cluster'lı</title>
+<meta charset="utf-8">
+<title>İstanbul Kapı Atlası</title>
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- Marker Cluster -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
-  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<!-- MarkerCluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
-  <style>
-    #map { height: 600px; width: 100%; }
+<style>
+html, body { margin:0; height:100%; }
+#map { height:100vh; width:100%; }
 
-    .popup-img {
-      width: 180px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-    }
+/* Popup image */
+.popup-img{
+  width:180px;
+  border-radius:8px;
+  margin-bottom:8px;
+  cursor: zoom-in;
+}
 
+/* Cluster style */
+.marker-cluster,
+.marker-cluster div{
+  background: transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+.marker-cluster div{
+  width:32px;
+  height:32px;
+  line-height:32px;
+  border-radius:50%;
+  background:#9f1d2d !important;
+  color:#fff !important;
+  font-size:16px;
+  font-weight:600;
+  text-align:center;
+  position:relative;
+}
+.marker-cluster div::before{
+  content:"";
+  position:absolute;
+  inset:-5px;
+  border-radius:50%;
+  background:rgba(159,29,45,.25);
+  z-index:-1;
+}
+.marker-cluster div::after{
+  content:"";
+  position:absolute;
+  inset:-11px;
+  border-radius:50%;
+  background:rgba(159,29,45,.12);
+  z-index:-2;
+}
 
-    /* Cluster arka planını tamamen sıfırlıyoruz */
-    .marker-cluster,
-    .marker-cluster div {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
+/* ===== LIGHTBOX ===== */
+#lightbox{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  z-index:9999;
+}
+#lightbox.is-open{ display:block; }
 
-    /* ORTADAKİ KIRMIZI DAİRE */
-    .marker-cluster div {
-      width: 32px;
-      height: 32px;
-      line-height: 32px;
-      border-radius: 50%;
-      background: #9f1d2d !important; /* koyu kırmızı */
-      color: #fff !important;
-      font-size: 16px;
-      font-weight: 600;
-      position: relative;
-      text-align: center;
-    }
+/* Foto alanı */
+.lb-stage{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  cursor:grab;
+  z-index: 1; /* topbar altta kalmasın diye topbar'a daha yüksek vereceğiz */
+}
+.lb-stage:active{ cursor:grabbing; }
 
-    /* 1. SAYDAM HALKA */
-    .marker-cluster div::before {
-      content: "";
-      position: absolute;
-      top: -5px;
-      left: -5px;
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: rgba(159, 29, 45, 0.25); /* yarı saydam */
-      z-index: -1;
-    }
+#lightbox-img{
+  max-width:90%;
+  max-height:90%;
+  border-radius:14px;
+  box-shadow:0 10px 40px rgba(0,0,0,.45);
+  transform: translate(0px,0px) scale(1);
+  user-select:none;
+  -webkit-user-drag:none;
+  touch-action:none;
+}
 
-    /* 2. DIŞTAKİ DAHA SAYDAM HALKA */
-    .marker-cluster div::after {
-      content: "";
-      position: absolute;
-      top: -11px;
-      left: -11px;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: rgba(159, 29, 45, 0.12); /* çok saydam */
-      z-index: -2;
-    }
+/* Başlık: foto üstünde ortalı */
+.lb-title-center{
+  position:absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  color:#fff;
+  font: Tahoma;
+  font-size:17px;
+  font-weight:600;
+  letter-spacing: .3px;
 
-  </style>
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(20,20,20,.55);
+  border: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(6px);
+
+  max-width: 80vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 4;          
+  pointer-events: none;  
+}
+
+/* Butonlar: sağ üst */
+.lb-actions{
+  position:absolute;
+  top: 18px;
+  right: 18px;
+  display:flex;
+  gap:8px;
+  z-index: 4; /* en üst */
+}
+.lb-btn{
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  border-radius:12px;
+  padding:8px 10px;
+  cursor:pointer;
+  font-size:14px;
+}
+.lb-btn:hover{ background:rgba(255,255,255,.20); }
+</style>
 </head>
 
 <body>
 
 <div id="map"></div>
 
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <div id="lb-title" class="lb-title-center"></div>
+
+  <div class="lb-actions">
+    <button class="lb-btn" type="button" onclick="zoomOut()" title="Uzaklaştır">−</button>
+    <button class="lb-btn" type="button" onclick="zoomIn()" title="Yakınlaştır">+</button>
+    <button class="lb-btn" type="button" onclick="resetZoom()" title="Sıfırla">Reset</button>
+    <button class="lb-btn" type="button" onclick="closeLightbox()" title="Kapat">✕</button>
+  </div>
+
+  <div id="lb-stage" class="lb-stage">
+    <img id="lightbox-img" alt="">
+  </div>
+</div>
+
 <script>
-  // 🌍 HARİTA
-  const map = L.map('map').setView([41.0351, 28.9784], 13);
+/* DOM REFERENCES */
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+const lbStage = document.getElementById("lb-stage");
+const lbTitle = document.getElementById("lb-title");
 
-  // 🗺 GOOGLE MAPS ALTLIK
-  L.tileLayer('http://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    subdomains: ['mt0','mt1','mt2','mt3']
-  }).addTo(map);
+/* LIGHTBOX STATE */
+let lbScale=1, lbX=0, lbY=0;
+let dragging=false, startX=0, startY=0;
 
-  // 🟥 PNG KAPI İKONU
-  const doorIcon = L.icon({
-    iconUrl: 'door_icon.png',
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40]
-  });
+function applyTransform(){
+  lightboxImg.style.transform = `translate(${lbX}px, ${lbY}px) scale(${lbScale})`;
+}
 
-  // 📌 KAPILAR (örnek – sen buraya dataset koyacaksın)
-  const kapilar = [
-    { coords: [41.0361, 28.9772], title: "Büyük Zarifi Apartmanı", image: "zarifi.jpg", description: "Art Nouveau kapı" },
-    { coords: [41.0380, 28.9788], title: "Tomtom Kapı", image: "kapi2.jpg", description: "Tomtom'da tarihi kapı" }
-  ];
+function openLightbox(src, title){
+  lbScale=1; lbX=0; lbY=0;
+  applyTransform();
 
-  // CLUSTER
-  const markers = L.markerClusterGroup();
+  lbTitle.textContent = title || "";
+  lightboxImg.onerror = () => closeLightbox();
+  lightboxImg.src = src;
+  lightboxImg.alt = title || "Fotoğraf";
 
-  kapilar.forEach(k => {
-    const marker = L.marker(k.coords, { icon: doorIcon })
-      .bindPopup(`
-        <div style="width:200px">
-          <img class="popup-img" src="${k.image}">
-          <h3 style="margin:0;font-size:16px;">${k.title}</h3>
-          <p style="font-size:13px;">${k.description}</p>
+  lightbox.classList.add("is-open");
+}
 
-          <a href="https://www.google.com/maps?q=&layer=c&cbll=${k.coords[0]},${k.coords[1]}"
-             target="_blank"
-             style="padding:6px 8px; background:#eee; border-radius:6px; text-decoration:none; color:#333; font-size:13px;">
-            Street View
-          </a>
-        </div>
-      `);
+function closeLightbox(){
+  lightbox.classList.remove("is-open");
+}
 
-    markers.addLayer(marker);
-  });
+function zoomIn(){ lbScale=Math.min(4, lbScale+0.25); applyTransform(); }
+function zoomOut(){
+  lbScale=Math.max(1, lbScale-0.25);
+  if(lbScale===1){ lbX=0; lbY=0; }
+  applyTransform();
+}
+function resetZoom(){ lbScale=1; lbX=0; lbY=0; applyTransform(); }
 
-  map.addLayer(markers);
+/* Wheel zoom */
+lbStage.addEventListener("wheel", (e)=>{
+  e.preventDefault();
+  const next = lbScale + (e.deltaY < 0 ? 0.15 : -0.15);
+  lbScale = Math.min(4, Math.max(1, next));
+  if(lbScale===1){ lbX=0; lbY=0; }
+  applyTransform();
+},{passive:false});
 
+/* Drag only when zoomed */
+lbStage.addEventListener("pointerdown", (e)=>{
+  if(lbScale<=1) return;
+  dragging=true;
+  startX=e.clientX-lbX;
+  startY=e.clientY-lbY;
+  lbStage.setPointerCapture(e.pointerId);
+});
+lbStage.addEventListener("pointermove", (e)=>{
+  if(!dragging) return;
+  lbX=e.clientX-startX;
+  lbY=e.clientY-startY;
+  applyTransform();
+});
+lbStage.addEventListener("pointerup", ()=>dragging=false);
+lbStage.addEventListener("pointercancel", ()=>dragging=false);
+
+/* Click outside image = close (ama butonlara tıklayınca kapanmasın) */
+lightbox.addEventListener("click", (e)=>{
+  if(e.target === lightbox) closeLightbox();
+});
+
+/* ESC close */
+document.addEventListener("keydown", (e)=>{
+  if(e.key==="Escape") closeLightbox();
+});
+
+/* ===== MAP ===== */
+const map = L.map('map').setView([41.0351,28.9784],13);
+L.tileLayer('https://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}',{
+  maxZoom:20,
+  subdomains:['mt0','mt1','mt2','mt3']
+}).addTo(map);
+
+const doorIcon = L.icon({
+  iconUrl:'door_icon.png',
+  iconSize:[40,40],
+  iconAnchor:[20,40],
+  popupAnchor:[0,-40]
+});
+
+const kapilar = [
+  {coords:[41.035539, 28.988577], title:"Ayaspaşa Apartmanı", image:"ayaspasa.jpg", description:"19. yüzyıl sonu – 20. yüzyıl başı apartmanlaşma sürecinin Beyoğlu’ndaki nitelikli örneklerinden biridir."},
+  {coords:[41.035860, 28.987360], title:"Melek Apartmanı", image:"melek.jpg", description:"Tomtom'da tarihi kapı"},
+  {coords:[41.037449,28.987693], title:"Süren Apartmanı", image:"süren.jpg", description:"Tarihi giriş"},
+  {coords:[41.030095, 28.975508], title:"Suriye Pasajı", image:"suriyepasaj.jpg", description:"Suriye pasajı İstiklal Caddesi üzerinde yer almaktadır."}
+];
+
+const markers = L.markerClusterGroup();
+kapilar.forEach(k=>{
+  markers.addLayer(
+    L.marker(k.coords,{icon:doorIcon}).bindPopup(`
+      <div style="width:200px">
+        <img class="popup-img"
+             src="${k.image}"
+             onerror="this.style.display='none'"
+             onclick="openLightbox('${k.image}','${k.title}')">
+        <h3 style="margin:4px 0;font-size:16px">${k.title}</h3>
+        <p style="font-size:13px">${k.description||""}</p>
+        <a target="_blank"
+           href="https://www.google.com/maps?q=&layer=c&cbll=${k.coords[0]},${k.coords[1]}"
+           style="display:inline-block;padding:6px 8px;background:#eee;
+                  border-radius:6px;text-decoration:none;color:#333;font-size:13px">
+          Street View
+        </a>
+      </div>
+    `)
+  );
+});
+map.addLayer(markers);
 </script>
 
 </body>
